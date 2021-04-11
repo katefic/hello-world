@@ -58,6 +58,8 @@ bin/zkServer.sh为启动脚本
 #启动
 bin/zkServer.sh start [conf/zoo0.cfg]
 查看状态
+bin/zkServer.sh status conf/zoo1.cfg
+
 echo ruok|nc localhost 2181
 echo conf|nc localhost 2181
 
