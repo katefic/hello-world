@@ -56,14 +56,14 @@ bin/zkServer.sh为启动脚本
 
 ```shell
 #启动
-bin/zkServer.sh start [conf/zoo0.cfg]
+bin/zkServer.sh start [conf/zoo.cfg]
 查看状态
-bin/zkServer.sh status conf/zoo1.cfg
+bin/zkServer.sh status conf/zoo.cfg
 
 echo ruok|nc localhost 2181
 echo conf|nc localhost 2181
 
-#启动Zookeeper服务之后，输入以下命令，连接到Zookeeper服务：
+#启动Zookeeper服务之后，输入以下命令，连接到Zookeeper服务，会打开交互式shell：
 bin/zkCli.sh -server localhost:2181
 ```
 
