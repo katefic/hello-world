@@ -20,10 +20,9 @@ Kafka使用ZooKeeper对集群元数据进行持久化存储，如果ZooKeeper丢
 #这三项都配置
 broker.id=1
 delete.topic.enable=true
+或者用listener
 host.name=172.16.84.21
 
-#advertised.listeners可能通用性更强
-advertised.listeners=PLAINTEXT://10.0.165.8:9092
 
 num.network.threads=16
 num.io.threads=48
@@ -43,6 +42,8 @@ connections.max.idle.ms=600000
 #It will migrate any partitions the server is the leader for to other replicas prior to shutting down
 controlled.shutdown.enable=true
 
+#ISR踢出策略，默认10000ms
+replica.lag.time.max.ms = 10000
 controlled.shutdown.max.retries=3
 controlled.shutdown.retry.backoff.ms=5000
 controller.socket.timeout.ms=30000
@@ -108,6 +109,10 @@ kafka-consumer-groups.sh --bootstrap-server 2.2.11.79:9092 --lists
 kafka-consumer-groups.sh --bootstrap-server 2.2.11.79:9092 --group console-consumer-16754 --topic s2 --execute --reset-offsets --to-earliest
 #模拟消费
 kafka-console-consumer.sh --bootstrap-server 2.2.11.79:9092 --group console-consumer-16754 --topic s2
+#当提示group选项不可用时
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic s2 --consumer-property group.id=1 --from-beginning
+#或者
+--consumer.config config.file
 ```
 
 0.8以前的kafka，消费的进度(offset)是写在zk中的，所以consumer需要知道zk的地址。后来的版本都统一由broker管理，所以就用bootstrap-server了。
@@ -130,7 +135,9 @@ kafka-consumer-groups.sh --bootstrap-server 2.2.11.79:9092 --describe --group g1
 
 Consumer group 'g1' is rebalancing
 
-可能是参数问题，使用em的配置后，是再使用生产、消费、重置命令是正常的
+可能是参数问题，使用em的配置后，再使用生产、消费、重置命令是正常的
+2021-04-18
+在笔记本中用单台虚拟机搭建zk和kafka集群，也没有办公机上的3台卡
 
 ## 7.
 
