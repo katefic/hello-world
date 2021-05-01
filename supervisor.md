@@ -60,6 +60,7 @@ systemctl start supervisord
 ```shell
 #指定所用的配置文件，该文件中可以配置为连接远程的supervisord服务
 
+#4.2.2版本中，将进程sock的chown=zs后，可以通过普通用户zs来直接使用supervisorctl，不用用sudo了
 [supervisorctl]
 serverurl=unix:///var/run/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
 serverurl=http://2.2.11.81:9001 ; use an http:// url to specify an inet socket
