@@ -176,6 +176,7 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 #一主多从要保证被调度到的节点上有该镜像
 #在从节点上运行容器(container)前，会先创建相应的pod，可以通过docker ps查看到
+#pod资源至少由2个容器组成，pod基础容器和业务容器
 ```
 
 ### 3.2 expose
@@ -188,12 +189,13 @@ kubectl get service
 
 #查看日志
 kubectl logs -l app=hello-go -f
+kubectl logs pod_name container_name
 ```
 
 ### 3.3 scale
 
 ```shell
-#将已有容器扩展至4个
+#将已有容器扩展至4个；这是让生成了4个pod资源，而不是在一个pod内启动4个hello-go
 kubectl scale deployments/hello-go --replicas=4
 
 $ kubectl get deployment   hello-go
