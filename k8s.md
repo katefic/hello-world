@@ -184,8 +184,12 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 ```shell
 kubectl expose deployment hello-go --type=LoadBalancer --port=8180
 
-#查看被expose的外部端口，然后就可以访问容器了
-kubectl get service
+#查看被expose的外部端口，然后就可以通过外网访问容器了
+kubectl get service -o wide
+#查看endpoints
+kubectl describe svc svn_name
+
+#如果访问不通，可能是node节点上kube-proxy服务没开
 
 #查看日志
 kubectl logs -l app=hello-go -f
