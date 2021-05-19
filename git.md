@@ -1,10 +1,14 @@
 ##### 1.安装
 
 ```shell
-yum install git
+#卸载掉系统自带的旧版本，通过源码编译安装，也可以IUS库中下载新的rpm包
+yum install curl-devel expat-devel perl-CPAN  openssl-devel zlib-devel
+make prefix=/usr/local/git all
+make prefix=/usr/local/git install
+添加man路径后，在man目录下查看一下提供的是哪些命令的手册
 ```
 
-##### 2.安装完先进行初始化
+##### 2.安装完先生成配置文件
 
 .git/config -> ~/.gitconfig (--global)-> /etc/gitconfig(--system)
 
@@ -24,7 +28,7 @@ $ git config -e    # 针对当前仓库
 
 
 
-##### 3.3种初始化本地仓库的方式
+##### 3. 3种初始化本地仓库的方式
 
 > 1.手动创建，自定义仓库名称
 
@@ -82,7 +86,18 @@ git merge origin/master
 
 ##### 5.分支
 
-在指定分支上的操作，当还没有git add时，还是在当前目录中的操作，此时若`git checkout`到其他分支，是会看到上次操作分支带来的变化的；在操作分支上进行add，commit后，再
+```shell
+git branch 分支名->新建分支 或者
+
+git checkout -b 分支名 ->直接创建并切换到新分支
+
+#切换分支后，当前工作目录的内容会随着变化
+
+#将指定分支合并到当前分支
+git merge 分支名
+```
+
+
 
 ##### 6.日志
 

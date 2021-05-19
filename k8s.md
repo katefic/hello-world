@@ -127,6 +127,10 @@ kubectl completion bash >/etc/bash_completion.d/kubectl
 
 当连接多个集群时，可以通过KUBECONFIG环境变量来指定使用哪个配置文件
 
+# 重启kubeadm部署的k8s集群
+
+master节点执行systemctl restart kubelet
+
 ## 2. 组件
 
 **master**组件：
@@ -148,6 +152,8 @@ kubectl completion bash >/etc/bash_completion.d/kubectl
 ​	-2.kubelet
 
 ## 3. 创建deployment
+
+> rc滚动升级会引起服务中断，于是引入了deployment资源
 
 ### 3.1 create
 
@@ -187,7 +193,7 @@ kubectl expose deployment hello-go --type=LoadBalancer --port=8180
 #查看被expose的外部端口，然后就可以通过外网访问容器了
 kubectl get service -o wide
 #查看endpoints
-kubectl describe svc svn_name
+kubectl describe svc svc_name
 
 #如果访问不通，可能是node节点上kube-proxy服务没开
 
@@ -210,6 +216,16 @@ hello-go      4/4         4                      4      35m
 #批量查看日志
 for pod in $(kubectl get po -l app=hello-go -oname);do echo $pod;kubectl logs $pod;done
 ```
+
+### 3.4 备份 k8s yaml 配置
+
+```shell
+kubectl get -o yaml pod pod_name 
+# --export去掉集群相关信息
+kubectl get -o yaml 资源类型 资源名称 --export > file.yml
+```
+
+
 
 ## 4. 使用ansible
 

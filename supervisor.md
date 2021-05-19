@@ -15,7 +15,7 @@
 方式三：
 		yum install supervisor
 ```
-## -2.配置
+## 2.配置
 
 生成示例配置文件，该文件主要配置supervisord服务本身，具体program的配置文件通过include section包含
 

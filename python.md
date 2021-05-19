@@ -63,12 +63,19 @@ print ("相加后的值为 : ", sum( 20, 20 ))
 ### 3.1 str.format()
 
 ```python
+#{:}，:左边指定输出列表的索引，右边指定填充、宽度和对齐
 >>> print('{}网址： "{}!"'.format('菜鸟教程', 'www.runoob.com'))
 菜鸟教程网址： "www.runoob.com!"
 
 ```
 
 str() repr() str.rjust() str.center()
+
+> 解决方法：
+>
+> 可以用中文空格填充，中文空格 chr(12288) 
+>
+>  print("{0[0]:<4}{0[1]:\u3000<20}{0[2]:<8}".format(line.split()))
 
 ### 3.2 input
 
