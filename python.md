@@ -143,3 +143,8 @@ import shutil
 help(shutil)
 ```
 
+
+
+## 7. 常用模块
+
+psutil

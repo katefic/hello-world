@@ -70,6 +70,7 @@ supervisorctl -c /path/to/supervisord.conf
 
 #不修改配置文件，直接指定连接的服务器
 supervisorctl -s http://2.2.11.81:9001
+			  -s unix:///tmp/supervisor.sock
 
 
 命令式：

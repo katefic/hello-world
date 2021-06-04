@@ -60,6 +60,7 @@ git clone https://github.com/fsliurujie/test.git      --HTTPS协议
 ```shell
 #这样是将远程的一个仓库添加到本地来访问，以后git push -u nnd master就是这样；还不能直接操作gitee来远程创建一个仓库
 git remote add nnd git@gitee.com:tsg2/scripts
+git push nnd master
 
 #指定默认分支，以后可以直接git pull/push
 git branch --set-upstream-to=nnd/master

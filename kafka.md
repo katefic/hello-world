@@ -122,6 +122,9 @@ bin/kafka-server-start.sh config/server.properties
 
 zkCli.sh
 get /brokers/topics/__consumer_offsets/partitions/40/state
+
+#查看kafka版本
+ll libs/kafka*.jar
 ```
 
 ## 5.常用命令

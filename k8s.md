@@ -133,7 +133,7 @@ master节点执行systemctl restart kubelet
 
 ## 2. 组件
 
-**master**组件：
+#### Control Plane Components：
 
 ​	-1.The API server
 
@@ -151,9 +151,23 @@ master节点执行systemctl restart kubelet
 
 ​	-2.kubelet
 
+​	-3.容器运行时（Container Runtime）
+
+#### 插件（Addons）:
+
+​	-1.dns
+
+​	-2.dashboard
+
+​	-3.容器资源监控，[Prometheus](https://prometheus.io/) 是一个 CNCF 项目，可以原生监控 Kubernetes、 节点和 Prometheus 本身
+
+​	-4.集群层面日志
+
 ## 3. 创建deployment
 
 > rc滚动升级会引起服务中断，于是引入了deployment资源
+>
+> deployment资源对象通过Replicaset控制器实例完成对pod对象的控制，而非直接控制
 
 ### 3.1 create
 
@@ -223,6 +237,19 @@ for pod in $(kubectl get po -l app=hello-go -oname);do echo $pod;kubectl logs $p
 kubectl get -o yaml pod pod_name 
 # --export去掉集群相关信息
 kubectl get -o yaml 资源类型 资源名称 --export > file.yml
+```
+
+#### 3.5 滚动升级
+
+```
+#先用create创建好了，再用-oyaml导出配置文件，编辑之后再创建
+kubectl create -f nd2.yml --record
+kubectl set image deployment/nd2 nginx=2.2.11.79:5000/nginx:1.15 --record
+[root@centos79 /tmp/20210524]# kubectl rollout history deployment nd2
+deployment.apps/nd2 
+REVISION  CHANGE-CAUSE
+2         kubectl create --filename=nd2.yml --record=true
+3         kubectl set image deployment/nd2 nginx=2.2.11.79:5000/nginx:1.15 --record=true
 ```
 
 

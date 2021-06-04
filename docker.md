@@ -28,6 +28,8 @@ docker ps
 
 
 
+**docker daemon接收的是对API的调用，使用docker cli也是最终调用了API与daemon通信**
+
 #### 1.2 使用socat查看docker cli与daemon的交互
 
 ```shell
@@ -56,11 +58,18 @@ docker -H tcp://2.2.11.79:2375 ps
 > You can only override the entrypoint if you explicitly pass in an
 > --entrypoint flag to the docker run command
 >
-> 
+
+dockerfile中指定将/dev目录映射成卷，或者在docker run中指定将/dev目录映射成卷，都会报错：
+
+docker: Error response from daemon: OCI runtime create failed: container_linux.go:367: starting container process caused: setup user: no such file or directory: unknown.
 
 
 
+**Multi-stage build**：
 
+- java程序需要编译，用maven stage先进行编译，然后直接将编译生成的jar包copy到jdk stage，再指定entryport ["java", "-jar", "name.jar"]
+- node.js，先在builder中用npm install安装好包，再把这些COPY到final image
+- go，编译生成的是本地二进制文件，直接将其COPY到final image就可运行
 
 #### 2.1 Only the instructions `RUN`, `COPY`, `ADD` create layers.
 
@@ -90,7 +99,7 @@ The table below shows what command is executed for different `ENTRYPOINT` / `CMD
 | **CMD [“p1_cmd”, “p2_cmd”]**   | p1_cmd p2_cmd              | /bin/sh -c exec_entry p1_entry | exec_entry p1_entry p1_cmd p2_cmd              |
 | **CMD exec_cmd p1_cmd**        | /bin/sh -c exec_cmd p1_cmd | /bin/sh -c exec_entry p1_entry | exec_entry p1_entry /bin/sh -c exec_cmd p1_cmd |
 
-
+CMD指令可以放在前面行，这个不容易改变
 
 > centos的镜像，exec和shell格式的entrypoint，都会将进程ID设置为1，但是docker stop却还是要用10s
 
@@ -105,6 +114,7 @@ Optionally `COPY` accepts a flag `--from=<name>` that can be used to set the sou
 ```shell
 #要注意context_dir
 docker build -t tag_name -f path/to/dockerfile context_dir
+#若不显示指定-f，则在context_dir中查找
 ```
 
 为镜像配置时区
@@ -113,11 +123,26 @@ docker build -t tag_name -f path/to/dockerfile context_dir
 COPY /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 ```
 
+```
+WORKDIR ...
+COPY . .
+```
+
 
 
 #### 2.5 ENV
 
 为镜像配置编码locale
+
+```dockerfile
+ENV k1=v1 \
+	k2=v2
+	
+#ENV设置的变量会存在于最终生成的镜像中，如果只想在构建时使用，可以用
+RUN k1=v1 ...
+或者
+ARG k1=v1
+```
 
 
 
@@ -162,6 +187,22 @@ docker inspect -f '{{json .Mounts}}' container_id | jq
 - ARG
 
   dockerfile中使用ARG指令，然后在docker build --build-arg ARG_NAME=VALUE
+
+- WORKDIR
+
+  该指令指定的目录若不存在，会自动创建
+
+
+
+#### 2.7 可选的优化书写顺序
+
+```dockerfile
+EXPOSE
+CMD
+ENV
+WORKDIR
+COPY
+```
 
 
 
@@ -320,7 +361,8 @@ docker inspect -f '{{.HostConfig.LogConfig.Type}}' <CONTAINER>
 
 #指定容器运行时的log-driver
 docker run -it --log-driver none alpine ash
-
+							syslog
+							journald
 #安装新的log-driver plugin
 docker plugin install <org/image>
 
@@ -343,6 +385,105 @@ docker run -ti --cap-drop=单个|all
 ![image-20210518182241606](D:\typora\images\image-20210518182241606.png)
 
 
+
+### 8. 其他
+
+#### 8.1 查看容器进程在宿主机的 PID
+
+​	
+
+```
+docker container top <container>
+
+cat /sys/fs/cgroup/memory/docker/<containerId>/cgroup.procs
+
+docker inspect -f '{{.State.Pid}}' <container>
+```
+
+
+
+#### 8.2 docker run 选项
+
+```
+--cpuset-cpus=1
+-m/--memory //该选项指定的内存，还会分配等量的swap，可以再配合--memory-swap选项来计算swap容量，或者将其设置为与-m相同来禁用swap
+
+docker run -ti --oom-kill-disable --memory 4M ubuntu sleep 1
+docker inspect <containerId> | grep OOMKilled
+```
+
+
+
+#### 8.3 namespace
+
+![image-20210525105609151](D:\typora\images\image-20210525105609151.png)
+
+##### 8.3.1 net
+
+```
+docker run -ti --net=host ubuntu /bin/bash
+```
+
+![image-20210525105654777](D:\typora\images\image-20210525105654777.png)
+
+##### 8.3.2 pid
+
+```
+docker run --rm --pid=host ubuntu ps -p 1
+```
+
+
+
+##### 8.3.3 mount
+
+```
+docker run -ti --workdir /host \
+--volume /:/host:ro ubuntu /bin/bash
+```
+
+
+
+#### 8.4 使用nsenter
+
+```
+#先启动nsenter
+docker run -v /usr/local/bin:/target jpetazzo/nsenter
+
+#再创建新容器
+CID=$(docker run -d busybox sleep 9999)
+PID=$(docker inspect --format {{.State.Pid}} $CID)
+
+#使用nsenter连接
+nsenter --target $PID \
+--uts --ipc --net /bin/bash
+
+#后面就可以在新容器中使用host上的工具了，如tcpdump
+```
+
+### 9 docker 命令
+
+```
+#将运行中的容器保存成镜像
+docker container commit -a "author" -m "commit message" container_id image_id:tag
+#提交成功后查看
+docker image ls
+
+#将运行中的容器导出成tgz文件
+docker container export -o filename.tgz container_id
+#export出的tgz文件只能通过import导入
+docker image import filename.tgz image_id:tag
+#import的镜像不包含hisotry信息
+
+#将现有镜像保存成tgz文件
+docker image save -o filename.tgz image_id:tag
+#将上步的tgz文件导入
+docker image load -i filename.tgz
+```
+
+```
+#只显示指定名称的镜像，可以指定多个-f
+docker image ls -f reference=container_name
+```
 
 #查看镜像压缩后大小
 
@@ -373,3 +514,8 @@ docker ps -a -q --filter=status=exited
 安装时要求container-selinux，需要添加repo
 
 baseurl=http://mirror.centos.org/centos/7/extras/x86_64/
+
+
+
+docker stats container_id
+
