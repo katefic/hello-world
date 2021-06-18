@@ -123,8 +123,8 @@ docker build -t tag_name -f path/to/dockerfile context_dir
 COPY /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 ```
 
-```
-WORKDIR ...
+```dockerfile
+WORKDIR ...	#该指令指定的目录若不存在，会自动创建
 COPY . .
 ```
 
@@ -190,7 +190,7 @@ docker inspect -f '{{json .Mounts}}' container_id | jq
 
 - WORKDIR
 
-  该指令指定的目录若不存在，会自动创建
+  **该指令指定的目录若不存在，会自动创建**
 
 
 
@@ -306,11 +306,64 @@ $ docker run --name wordpress \
 
 ### 5. docker-compose
 
+#### 5.1 命令
+
 docker compose 向entrypoint添加参数，目前用的是添加command行，启动后再修改docker-compose.yml文件，注释掉command行，**这样不行**
 
+```
+docker-compose -f docker-compose-scale.yml up -d --scale accesslog=3
+```
+
+指定多个yml文件，后者覆盖前者中相同的部分
+
+```
+docker-compose -f f1.yml -f f2.yml -p project_name up -d
+```
 
 
 
+#### 5.2 yml配置文件
+
+1. ports命令，若不指定目标主机上的端口，则会随机分配
+
+2. 文件中使用shell中的环境变量时，要先在shell中export
+
+3. 报错时下载最新版的执行文件
+
+4. secrets，是将源文件中的内容加载到目标文件中
+
+5. ports:
+
+   ​	"${TODO_WEB_PORT}:80"
+
+   environment:
+
+   ​	Database:Provider=Postgres
+   env_file:
+
+   ​	./config/logging.information.env
+
+6.  .env文件配置默认使用
+
+   ```
+   COMPOSE_PATH_SEPARATOR=;
+   COMPOSE_FILE=docker-compose.yml;docker-compose-dev.yml
+   COMPOSE_PROJECT_NAME=ch10_lab
+   ```
+
+   
+
+7. extension fileds允许单个compose文件中使用yaml merge 语法<<: *logging
+
+8. 若镜像在启动时构建，则services下面的image指定的是构建好的镜像名称
+
+9. ports:
+
+   ​	#UDP 端口映射
+
+   ​	 \- 1162:1162/udp
+
+10. 
 
 ### 6. 官方
 
@@ -483,6 +536,8 @@ docker image load -i filename.tgz
 ```
 #只显示指定名称的镜像，可以指定多个-f
 docker image ls -f reference=container_name
+docker image ls "diamol\/*"
+docker image ls --filter reference=diamol\/*
 ```
 
 #查看镜像压缩后大小
@@ -518,4 +573,22 @@ baseurl=http://mirror.centos.org/centos/7/extras/x86_64/
 
 
 docker stats container_id
+
+
+
+### 10. 监控
+
+#### 10.1 expose
+
+```
+#docker engine启用metrics
+vi /etc/docker/daemon.json
+	"metrics-addr" : "10.205.211.205:9323",
+     "experimental" : true
+     
+#container启用metrics
+需要Prometheus and the
+client library在容器内部运行起来进行自定义收集
+
+```
 

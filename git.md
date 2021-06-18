@@ -108,4 +108,12 @@ git reflog
 git reset --hard index
 ```
 
-##### 7.
+##### 7.删除untrack files
+
+```
+#显示要删除的文件和目录
+git clean -nxfd
+#执行删除
+git clean -xfd
+```
+

@@ -1,5 +1,7 @@
 ## 1.rsync配置
 
+/etc/rsyncd.conf
+
 ```shell
 uid = root
 gid = root
@@ -15,7 +17,7 @@ gid = root
 # dont compress= *.gz *.tgz *.zip *.z *.Z *.rpm *.deb *.bz2
 
 [hehe]
-	path = /root
+	path = /vdb
 	read only = no
 	auth users = hehe
 	secrets file = /etc/rsync.pas
@@ -53,6 +55,8 @@ stopsignal=KILL
 	browseable = yes
 	read only = No
 	path = /opt/data
+	#以//分隔的不使见文件
+	veto files = /lost+found/.../
 ```
 
 supervisord.d/smb.ini配置
