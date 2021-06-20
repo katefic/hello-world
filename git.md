@@ -2,7 +2,7 @@
 
 ```shell
 #卸载掉系统自带的旧版本，通过源码编译安装，也可以IUS库中下载新的rpm包
-yum install curl-devel expat-devel perl-CPAN  openssl-devel zlib-devel
+yum install curl-devel expat-devel perl-CPAN  openssl-devel zlib-devel gcc
 make prefix=/usr/local/git all
 make prefix=/usr/local/git install
 添加man路径后，在man目录下查看一下提供的是哪些命令的手册
