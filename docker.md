@@ -1,4 +1,4 @@
-## 1. docker cli连接远程主机
+### 1. docker cli连接远程主机
 
 server端修改systemd文件，添加        
 
@@ -208,8 +208,6 @@ COPY
 
 ### 3. ssl registry
 
-> 使用http的registry只能通过localhost访问
-
 #### 3.1 生成自签证书
 
 ```shell
@@ -318,6 +316,13 @@ docker-compose -f docker-compose-scale.yml up -d --scale accesslog=3
 
 ```
 docker-compose -f f1.yml -f f2.yml -p project_name up -d
+```
+
+```
+#build args优先级：cmdline>docker-compose.yml>dockerfile
+docker-compose -f docker-compose.yml -f docker-compose-build.yml build --build-arg BUILD_TAG=fromcmdline numbers-api
+
+#compose.yml文件中的build下的args，只接收docker-compose -f ... -f ... build --build-arg key=value 的覆盖，它也会直接覆盖掉dockerfile中的args
 ```
 
 
@@ -538,6 +543,9 @@ docker image load -i filename.tgz
 docker image ls -f reference=container_name
 docker image ls "diamol\/*"
 docker image ls --filter reference=diamol\/*
+
+#查看label
+docker image inspect -f '{{.Config.Labels}}' image_name
 ```
 
 #查看镜像压缩后大小
