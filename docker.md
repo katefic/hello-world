@@ -1,16 +1,19 @@
 ### 1. docker cli连接远程主机
 
-server端修改systemd文件，添加        
+1. server端修改systemd文件，添加        
+
 
 ```shell
 	ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375        
 ```
 
-或者修改/etc/docker/daemon.json to connect to the UNIX socket and an IP address, as follows:        
+​	2. 修改/etc/docker/daemon.json to connect to the UNIX socket and an IP address, as follows:        
 
 ```shell
-   {  "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"] }     
+   {  "hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2375"] }     
 ```
+
+两者选一个，重复会报错
 
 client端通过-H参数指定服务器端，来连接
 
@@ -27,6 +30,102 @@ docker ps
 ```
 
 
+
+#### 1.1 还有两种安全的方式
+
+ 1. tls
+
+    需要修改daemon.json
+
+    ```json
+    {
+        "hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2376"],
+        "tls": true,
+        "tlscacert": "/diamol-certs/ca.pem",
+        "tlskey": "/diamol-certs/server-key.pem",
+        "tlscert": "/diamol-certs/server-cert.pem"
+    }
+    ```
+
+    1. 创建CA和ca.pem
+
+       ```
+       openssl req -subj '/C=CN/ST=BeiJing/L=HaiDian/O=em/CN=2.2.11.79' -newkey rsa:8192 -new -nodes -x509 -days 3650 -keyout /etc/pki/CA/private/cakey.pem -out  /etc/pki/CA/cacert.pem
+       
+       chmod 444  /etc/pki/CA/cacert.pem && chmod 400 /etc/pki/CA/private/cakey.pem
+       ```
+
+    2. 服务端生成req，CA签署证书
+
+       ```shell
+       HOST=
+       (umask 377;openssl genrsa -out server-key.pem 2048)
+       openssl req -subj "/C=CN/ST=BeiJing/L=HaiDian/O=em/CN=$HOST" -sha256 -new \
+       -key server-key.pem -out server.csr
+       
+       #在CA上操作
+       HOST=
+       echo subjectAltName = DNS:$HOST,IP:2.2.11.81,IP:127.0.0.1 >> extfile.cnf
+       echo extendedKeyUsage = serverAuth >> extfile.cnf
+       
+       sudo touch /etc/pki/CA/index.txt
+       echo 01 | sudo tee /etc/pki/CA/serial
+       openssl ca -days 365 -in server.csr -out server-cert.pem -extfile extfile.cnf
+       ```
+
+    3. 客户端生成req，CA签署证书
+
+       ```shell
+       (umask 377;openssl genrsa -out client-key.pem 2048)
+       openssl req -subj "/C=CN/ST=BeiJing/L=HaiDian/O=em/CN=2.2.11.80" -sha256 -new \
+       -key client-key.pem -out client.csr
+       
+       #在CA上操作
+       echo extendedKeyUsage = clientAuth > extfile.cnf
+       
+       openssl ca -days 365 -in client.csr -out client-cert.pem -extfile extfile.cnf
+       ```
+
+    4. 客户端访问
+
+       ```shell
+       #手动指定选项
+       docker --tlsverify \
+           --tlscacert=ca.pem \
+           --tlscert=cert.pem \
+           --tlskey=key.pem \
+           -H=$HOST:2376 version
+       +++++++++++++++++++++++++++++++++++++++++++++++++++
+       
+       #配置默认选项
+       
+       cp -v {ca,cert,key}.pem ~/.docker
+       
+       mv cacert.pem ca.pem && mv client-cert.pem cert.pem && mv client-key.pem key.pem
+       export DOCKER_HOST=tcp://$HOST:2376 DOCKER_TLS_VERIFY=1
+       docker images
+       
+       #curl
+       curl https://$HOST:2376/images/json \
+         --cert ~/.docker/cert.pem \
+         --key ~/.docker/key.pem \
+         --cacert ~/.docker/ca.pem
+         
+       #context
+       docker context create --docker "host=tcp://2.2.11.81:2376,ca=/root/.docker/ca.pem,cert=/root/.docker/cert.pem,key=/root/.docker/key.pem" c81
+       
+       docker context create --docker "host=ssh://root@2.2.11.80" c80
+       ```
+
+       
+
+	2. ssh，什么都不需要修改，只利用远程用户访问，password or public key；但该用户需要对远程主机上docker daemon有访问权限
+
+    ```
+    docker -H ssh://root@2.2.11.81 images
+    ```
+
+    
 
 **docker daemon接收的是对API的调用，使用docker cli也是最终调用了API与daemon通信**
 
@@ -57,7 +156,6 @@ docker -H tcp://2.2.11.79:2375 ps
 >
 > You can only override the entrypoint if you explicitly pass in an
 > --entrypoint flag to the docker run command
->
 
 dockerfile中指定将/dev目录映射成卷，或者在docker run中指定将/dev目录映射成卷，都会报错：
 
@@ -299,6 +397,15 @@ $ docker run --name wordpress \
 ```
 
 
+
+#### 4.4
+
+```
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+```
 
 
 
