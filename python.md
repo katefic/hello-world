@@ -4,6 +4,7 @@
 
 ```python
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 # Filename: using_name.py
 
 if __name__ == '__main__':
@@ -90,7 +91,11 @@ num = int(input('input a number: '))
 
 ```python
 open(filename, mode)
+#向文件写入
 with open(filename, mode) as f:
+    f.write("")
+    f.writeline(list)
+    print("hello", file=f)
     
 ```
 
@@ -155,3 +160,58 @@ os
 
 #### 8.1 字符串中带localhost会报错，换成127.0.0.1正常
 
+## 9. pip
+
+### 9.1 apk安装
+
+```
+cat /etc/os-release
+cd /etc
+sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+apk update
+apk add py-pip
+
+pip install --upgrade pip install -i https://pypi.tuna.tsinghua.edu.cn/simple docker-compose
+```
+
+
+
+### 9.2 yum安装
+
+```
+yum install python3-pip
+#直接用下面的清华源更新
+#python3 -m pip install --upgrade pip "pip < 21.0"
+```
+
+
+
+### 9.3 pypi 镜像使用帮助
+
+pypi 镜像每 5 分钟同步一次。
+
+### 临时使用
+
+```
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple some-package
+```
+
+注意，`simple` 不能少, 是 `https` 而不是 `http`
+
+### 设为默认
+
+升级 pip 到最新的版本 (>=10.0.0) 后进行配置：
+
+```
+
+[root@c81 ~]# python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+Writing to /root/.config/pip/pip.conf
+
+
+```
+
+如果您到 pip 默认源的网络连接较差，临时使用本镜像站来升级 pip：
+
+```
+pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
+```

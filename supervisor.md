@@ -30,13 +30,17 @@ nginx.conf配置
 
 ```ini
 [program:Nginx-srv]
+;不在PATH中的命令要用绝对路径
 command=nginx -g 'daemon off;'
 ;command=/usr/sbin/nginx
+;有些程序如tomcat运行时，需要在程序目录
+directory=/usr/local/tomcat/bin
 autostart=true
 autorestart=true
 startsecs=1
 startretries=3
-stopsignal=QUIT
+; signal used to kill process (default TERM)
+;stopsignal=QUIT
 stderr_logfile=/var/log/supervisor_nginx.err.log
 stdout_logfile=/var/log/supervisor_nginx.out.log
 ;stopsignal=KILL

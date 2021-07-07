@@ -119,13 +119,14 @@ docker ps
 
        
 
-	2. ssh，什么都不需要修改，只利用远程用户访问，password or public key；但该用户需要对远程主机上docker daemon有访问权限
+2.ssh，什么都不需要修改，只利用远程用户访问，password or public key；**但该用户需要对远程主机上docker daemon有访问权限**
 
     ```
     docker -H ssh://root@2.2.11.81 images
     ```
 
-    
+
+​    
 
 **docker daemon接收的是对API的调用，使用docker cli也是最终调用了API与daemon通信**
 
@@ -171,7 +172,9 @@ docker: Error response from daemon: OCI runtime create failed: container_linux.g
 
 #### 2.1 Only the instructions `RUN`, `COPY`, `ADD` create layers.
 
+copy指令产生新层，所以其后的RUN rm不会减少空间；
 
+yum && rm -rf /var/cache/yum在同一层，所以可以减少空间
 
 #### 2.2 The `CMD` instruction has three forms:
 
@@ -223,7 +226,24 @@ COPY /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 ```dockerfile
 WORKDIR ...	#该指令指定的目录若不存在，会自动创建
-COPY . .
+COPY . .	#若目标目录不存在，也会自动创建
+```
+
+**If you write files in a layer, those files are permanently there;**
+
+copy命令与RUN rm命令只能分开写，所以一旦使文件存在，就再也不能删掉了
+
+### ADD
+
+he best use for `ADD` is local tar file auto-extraction into the image, as in `ADD rootfs.tar.xz /`.
+
+不要从远程下载tar包，再用run来解压；用curl或wget：
+
+```dockerfile
+RUN mkdir -p /usr/src/things \
+    && curl -SL https://example.com/big.tar.xz \
+    | tar -xJC /usr/src/things \
+    && make -C /usr/src/things all
 ```
 
 
@@ -302,9 +322,13 @@ WORKDIR
 COPY
 ```
 
+### 2.8 使用多层构建
+
+每层都有它自己的构建缓存
 
 
-### 3. ssl registry
+
+## 3. ssl registry
 
 #### 3.1 生成自签证书
 
@@ -358,7 +382,7 @@ docker tag ...
 docker push/pull ...
 ```
 
-
+#### 3.4 注意镜像的OS/ARCH
 
 ### 4. 网络
 
@@ -625,7 +649,7 @@ nsenter --target $PID \
 #后面就可以在新容器中使用host上的工具了，如tcpdump
 ```
 
-### 9 docker 命令
+## 9 docker 命令
 
 ```
 #将运行中的容器保存成镜像
@@ -653,6 +677,8 @@ docker image ls --filter reference=diamol\/*
 
 #查看label
 docker image inspect -f '{{.Config.Labels}}' image_name
+
+#本地挂载卷要用绝对路径
 ```
 
 #查看镜像压缩后大小
@@ -661,7 +687,10 @@ docker save ubuntu:14.04.2 | gzip | wc -c
 
 
 
-
+```
+#查看docker使用空间
+docker system df 
+```
 
 docker build --no-cache 
 
@@ -670,8 +699,6 @@ docker build --no-cache
 
 
 
-
-docker inspect --format='{{.NetworkSettings.IPAddress}}'
 
 
 
@@ -691,7 +718,7 @@ docker stats container_id
 
 
 
-### 10. 监控
+## 10. 监控
 
 #### 10.1 expose
 
@@ -705,5 +732,45 @@ vi /etc/docker/daemon.json
 需要Prometheus and the
 client library在容器内部运行起来进行自定义收集
 
+```
+
+### 10.2 日志
+
+```
+#docker收集stdout和stderr流，将其保存在json文件中
+docker container inspect --format='{{.LogPath}}' timecheck
+#不管容器是否真的通过stdout在输出日志，都会生成.LogPath文件，不输出日志的文件大小为0
+```
+
+Docker will only read logs from stdout;
+
+
+
+## 11. alpine
+
+### 11.1 alpine版的jenkins升级docker-compost
+
+```
+cat /etc/os-release
+cd /etc
+sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+apk update
+apk add py-pip
+
+#默认安装了python3，所以直接用pip
+pip install --upgrade pip install -i https://pypi.tuna.tsinghua.edu.cn/simple docker-compose
+```
+
+### 11.2 libc
+
+alpine默认用的不是glibc，而是musl-libc
+
+### 11.3 安装curl
+
+```dockerfile
+#有了curl，可以把所有文件加路径打包，然后添加到镜像中
+RUN apk add --no-cache curl tar \
+    && curl http://2.2.11.81/nnd.tgz | tar --overwrite -Pzxf -
+#容器启动时会生成新的/etc/hosts
 ```
 
